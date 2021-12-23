@@ -1,3 +1,7 @@
+# Resources
+- A sample of Google meet extension https://github.com/Shopify/chrome_extensions/tree/master/google_meet_vault_profile
+- Similar extension which is not approved: https://chrome.google.com/webstore/detail/meet-transcript/jkdogkallbmmdhpdjdpmoejkehfeefnb
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
