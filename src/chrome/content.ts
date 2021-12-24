@@ -51,16 +51,18 @@ observer.observe(document, {
 });
 
 function connectToTranslation() {
-  window.prev = "";
-  // const mah = document.createElement("div") as HTMLElement;
-  // mah.id = "mahmoud";
-  // mah.style = "color:white;f0nt-size;12pt;height:100px'";
+  let prev: string = "";
 
-  // if (!document.getElementById("mahmoud")) {
-  //   element.innerHTML +=
-  //     "<div style='color:white;f0nt-size;12px' id='mahmoud'></div>";
-  // }
-  const translatedElement = document.getElementById("mahmoud");
+  const escapeHTMLPolicy = window.trustedTypes?.createPolicy("forceInner", {
+    createHTML: (to_escape: any) => to_escape
+  })!;
+
+  const node = document.createElement("div");
+  document.body.appendChild(node);
+  node.innerHTML = escapeHTMLPolicy.createHTML('<div style="width:200px;height:200px;background-color:white;position: absolute;top: 1px;left: 1px;z-index: 1000;direction:rtl"><div id="convo-past">Body</div><div id="convo-active" style="font-weight:bold">Active</div></div>') as unknown as string;
+
+  const convoPast = document.getElementById("convo-past")!;
+  const convoActive = document.getElementById("convo-active")!;
 
   let observer = new MutationObserver((mutations) => {
     const element = document.querySelector("[jsname=tgaKEf]") as HTMLElement;
@@ -71,21 +73,24 @@ function connectToTranslation() {
       document.getElementsByClassName("zs7s8d jxFHg")[0] as HTMLElement
     )?.innerText;
 
-    const convoLine = name + " : " + speech;
+    let eol = false;
 
-    if (!convoLine.startsWith(window.prev)) {
+    const convoLine = name == undefined ? null : name + " : " + speech;
+
+    if (!convoLine || !startWith(convoLine, prev)) {
       //flush prev
-      // translate(window.prev).then((translated) => {
-      //   console.log(translated);
-      // });
+      eol = true;
     }
 
-    translate(convoLine).then((translated) => {
-      console.log(translated);
-      // translatedElement.innerHTML = translated;
-    });
+    if (convoLine)
+      translate(convoLine).then((translated) => {
+        if (eol)
+          convoPast.innerHTML = escapeHTMLPolicy.createHTML(prev + '<br/>') as unknown as string;
 
-    window.prev = convoLine;
+        convoActive.innerHTML = escapeHTMLPolicy.createHTML(translated) as unknown as string;
+      });
+
+    prev = convoLine ? convoLine : '';
   });
   observer.observe(document.querySelector("[jsController=TEjq6e]")!, {
     characterData: true,
@@ -95,10 +100,15 @@ function connectToTranslation() {
   });
 }
 
+function startWith(text: string, start: string) {
+
+  return text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").startsWith(start.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ""));
+}
+
 function translate(text: string) {
   return fetch(
     "https://translation.googleapis.com/language/translate/v2?key=AIzaSyDf6XLgy4ma33uPlMkwGxrWg59VLDWTOr0&target=fa&source=en&q=" +
-      encodeURI(text),
+    encodeURI(text),
     { method: "POST" }
   )
     .then((response) => response.json())
