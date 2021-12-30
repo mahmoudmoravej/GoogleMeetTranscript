@@ -59,12 +59,13 @@ function connectToTranslation() {
 
   const node = document.createElement("div");
   document.body.appendChild(node);
-  node.innerHTML = escapeHTMLPolicy.createHTML('<div style="width:200px;height:200px;background-color:white;position: absolute;top: 1px;left: 1px;z-index: 1000;direction:rtl"><div id="convo-past">Body</div><div id="convo-active" style="font-weight:bold">Active</div></div>') as unknown as string;
+  node.innerHTML = escapeHTMLPolicy.createHTML('<div style="width:400px;height:600px;background-color:white;position: absolute;top: 1px;left: 1px;z-index: 1000;direction:ltr;overflow:scroll"><div id="convo-active" style="font-weight:bold">Active</div><div id="convo-past">Body</div></div>') as unknown as string;
 
   const convoPast = document.getElementById("convo-past")!;
   const convoActive = document.getElementById("convo-active")!;
 
   let observer = new MutationObserver((mutations) => {
+    mutations.forEach(mut => mut.removedNodes.forEach((node) => console.log(node.nodeValue)));
     const element = document.querySelector("[jsname=tgaKEf]") as HTMLElement;
 
     const speech = element?.innerText;
@@ -82,13 +83,23 @@ function connectToTranslation() {
       eol = true;
     }
 
-    if (convoLine)
-      translate(convoLine).then((translated) => {
-        if (eol)
-          convoPast.innerHTML = escapeHTMLPolicy.createHTML(prev + '<br/>') as unknown as string;
+    // if (convoLine)
+    //   translate(convoLine).then((translated) => {
+    //     if (eol)
+    //       convoPast.innerHTML = escapeHTMLPolicy.createHTML(prev + '<br/>') as unknown as string;
 
-        convoActive.innerHTML = escapeHTMLPolicy.createHTML(translated) as unknown as string;
-      });
+    //     convoActive.innerHTML = escapeHTMLPolicy.createHTML(translated) as unknown as string;
+    //   });
+
+    if (speech == '')
+      convoPast.innerHTML = escapeHTMLPolicy.createHTML(convoPast.innerHTML + '<br/>' + '!!! GOOOOOOOZ!') as unknown as string;
+
+    if (eol)
+      convoPast.innerHTML = escapeHTMLPolicy.createHTML(prev + '<br/> <br/>' + convoPast.innerHTML) as unknown as string;
+
+    if (convoLine) {
+      convoActive.innerHTML = escapeHTMLPolicy.createHTML(convoLine) as unknown as string;
+    }
 
     prev = convoLine ? convoLine : '';
   });
@@ -101,8 +112,9 @@ function connectToTranslation() {
 }
 
 function startWith(text: string, start: string) {
+  const regex = /[.,\/#!$%\^&\*;:{}=\-_`~()\s]/g;
 
-  return text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").startsWith(start.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ""));
+  return text.replace(regex, "").toLowerCase().startsWith(start.replace(regex, "").toLowerCase());
 }
 
 function translate(text: string) {
@@ -119,3 +131,23 @@ function translate(text: string) {
 //translate.google.com/
 
 //https://translate.google.com/?sl=en&tl=fa&text=hello&op=translate
+
+// new MutationObserver((mutations) => {
+//   mutations.forEach(mut => mut.removedNodes.forEach((node, key, parent) => console.log(node.textContent, key, parent)));
+// }).observe(document.querySelector("[jsController=TEjq6e]")!, {
+//   characterData: true,
+//   attributes: false,
+//   childList: true,
+//   subtree: true,
+// });
+
+//TODO :
+/**
+ * 
+ * seems the approach should be:
+ * 1- find the removed items from top and add them to the transcript
+ *    - Note that in one observation we may see couple of nodes has been removed, only the top ones are acceptable if they are in same order (i.e. 1,2,3)
+ * 2- note that the <span> children are always changing. You can never say it is the latest version
+ * 3- sometimes a word in a previous sentense is being correct
+ * 4- so, not a perfect approach is here if we cannot access the API
+ */
